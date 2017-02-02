@@ -9,6 +9,12 @@ parser.add_argument('threads_csv')
 parser.add_argument('people_csv')
 args = parser.parse_args()
 
+def squash_name(name):
+  words = [w for w in name.split(' ') if w]
+  return '{first} {last_initials}'.format(
+    first=words[0],
+    last_initials=''.join(w[0] for w in words[1:]))
+
 for varname in ['SALAZAR_SLACK_TOKEN', 'SALAZAR_FB_EMAIL', 'SALAZAR_FB_PASSWORD']:
   if not os.environ.get(varname):
     raise RuntimeError('{} must be set in environment'.format(varname))
@@ -26,27 +32,29 @@ def lookup(result_key, dicts, query_key, query_value, default=None):
 
 people = list(csv.DictReader(open(args.people_csv)))
 threads = list(csv.DictReader(open(args.threads_csv)))
+print(people)
+print(threads)
 
 slack_messages = unichat.slack.iter_messages(
   client,
-  get_username_from_id=(lambda id: lookup('name', people, 'slack_id', id)),
-  get_channelname_from_id=(lambda id: lookup('name', threads, 'slack_id', id)))
+  get_username_from_id=(lambda id: lookup('name', people, 'slack_id', id, default=('(???)({})'.format(id)))),
+  get_channelname_from_id=(lambda id: lookup('name', threads, 'slack_id', id, default=('(???)({})'.format(id)))))
 def _log(xs):
   for x in xs:
     print('In Slack:', x)
     yield x
 slack_messages = _log(slack_messages)
-slack_messages = (m._replace(content='{}: {}'.format(m.speaker, m.content)) for m in slack_messages if m.speaker != 'salazar')
+slack_messages = (m._replace(content='{}: {}'.format(squash_name(m.speaker), m.content)) for m in slack_messages if m.speaker != 'salazar')
 
 fb_messages = unichat.fb.iter_messages(
-  get_username_from_id=(lambda id: lookup('name', people, 'fb_id', id)),
-  get_channelname_from_id=(lambda id: lookup('name', threads, 'fb_id', id)))
+  get_username_from_id=(lambda id: lookup('name', people, 'fb_id', id, default=('(???)({})'.format(id)))),
+  get_channelname_from_id=(lambda id: lookup('name', threads, 'fb_id', id, default=('(???)({})'.format(id)))))
 def _log(xs):
   for x in xs:
     print('In FB:', x)
     yield x
 fb_messages = _log(fb_messages)
-fb_messages = (m._replace(content='{}: {}'.format(m.speaker, m.content)) for m in fb_messages if m.speaker != 'salazar')
+fb_messages = (m._replace(content='`{}` {}'.format(squash_name(m.speaker), m.content)) for m in fb_messages if m.speaker != 'salazar')
 
 
 def dump_slack_to_fb():

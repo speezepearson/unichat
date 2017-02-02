@@ -1,12 +1,18 @@
 import time
 import datetime as dt
+import logging
 import slackclient
 from . import Message
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 def iter_messages(client, get_username_from_id, get_channelname_from_id, poll_period=1):
   while True:
     for event in client.rtm_read():
       if event['type'] == 'message':
+        logger.debug('got message: {}'.format(event))
         yield Message(
           time=dt.datetime.now(),
           thread=get_channelname_from_id(event['channel']),
