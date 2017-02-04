@@ -13,13 +13,26 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 class Client:
-  def __init__(self, db_session):
+  def __init__(self, email, password, db_session):
+    self.email = email
+    self.password = password
     self.db_session = db_session
-    self.process = subprocess.Popen(['node', os.path.join(HERE, 'client.js')], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    self.process = None
+    self._sending_buffer = None
+    self._sending_writer = None
+    self._receiving_reader = None
+
+  def __enter__(self):
+    self.process = subprocess.Popen(['node', os.path.join(HERE, 'client.js')], stdin=subprocess.PIPE, stdout=subprocess.PIPE, env={'FB_EMAIL': self.email, 'FB_PASSWORD': self.password})
     self._sending_buffer = io.StringIO()
     self._sending_writer = csv.DictWriter(self._sending_buffer, fieldnames=['time', 'thread', 'speaker', 'content'])
     self._sending_writer.writeheader()
     self._receiving_reader = csv.reader(io.TextIOWrapper(self.process.stdout))
+    return self
+
+  def __exit__(self, *args):
+    self.process.kill()
+    self.process.wait()
 
   def send(self, message):
     logger.info('sending {} to Facebook'.format(message))
