@@ -2,28 +2,43 @@ import time
 import datetime as dt
 import logging
 import slackclient
-from . import Message
+from sqlalchemy_bonus import get_or_create
+from . import Message, Thread, Person
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 
-def iter_messages(client, get_username_from_id, get_channelname_from_id, poll_period=1):
-  while True:
-    for event in client.rtm_read():
-      if event['type'] == 'message':
-        logger.debug('got message: {}'.format(event))
-        yield Message(
-          time=dt.datetime.now(),
-          thread=get_channelname_from_id(event['channel']),
-          speaker=get_username_from_id(event['user']),
-          content=event['text'])
-    time.sleep(poll_period)
+class Client:
+  def __init__(self, slack_client, db_session):
+    self.slack_client = slack_client
+    self.db_session = db_session
 
-def send_messages(messages, client, get_channelid_from_name):
-  for message in messages:
-    client.api_call(
+  def __enter__(self):
+    if not self.slack_client.rtm_connect():
+      raise RuntimeError('unable to connect to Slack')
+    return self
+
+  def __exit__(self, *args):
+    pass
+
+  def read(self, poll_period=1):
+    while True:
+      for event in self.slack_client.rtm_read():
+        if event['type'] == 'message':
+          logger.debug('got message: {}'.format(event))
+          thread = get_or_create(self.db_session, Thread, palegreendot_id=event['channel'], defaults={'name': 'Slack channel '+event['channel']})
+          speaker = get_or_create(self.db_session, Person, palegreendot_id=event['user'], defaults={'name': 'Slack user '+event['user']})
+          return Message(
+            time=dt.datetime.now(),
+            thread=thread,
+            speaker=speaker,
+            content=event['text'])
+      time.sleep(poll_period)
+
+  def send(self, message):
+    self.slack_client.api_call(
       'chat.postMessage',
-      channel=get_channelid_from_name(message.thread),
+      channel=message.thread.palegreendot_id,
       text=message.content,
       as_user=True)
