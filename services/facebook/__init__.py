@@ -4,7 +4,7 @@ import subprocess
 import os
 import logging
 import io
-from sqlalchemy_bonus import get_or_create
+from sqlalchemy_bonus import get_or_create, session_context
 from .. import ClientBase
 from ... import Message, Thread, Person
 
@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 class Client(ClientBase):
-  def __init__(self, email, password, db_session):
+  def __init__(self, email, password, make_db_session):
     self.email = email
     self.password = password
-    self.db_session = db_session
+    self.make_db_session = make_db_session
     self.process = None
     self._sending_buffer = None
     self._sending_writer = None
@@ -51,11 +51,13 @@ class Client(ClientBase):
     r = next(self._receiving_reader)
     logger.info('received {} from Facebook'.format(r))
     fb_threadid, fb_speakerid, content = r
-    thread = get_or_create(self.db_session, Thread, fb_id=fb_threadid, defaults={'name': 'Facebook thread '+fb_threadid})
-    speaker = get_or_create(self.db_session, Person, fb_id=fb_speakerid, defaults={'name': fb_speakerid+'@facebook.com'})
-
-    return Message(
-      time=dt.datetime.now(),
-      thread=thread,
-      speaker=speaker,
-      content=content)
+    with session_context(self.make_db_session()) as session:
+      thread = get_or_create(session, Thread, fb_id=fb_threadid, defaults={'name': 'Facebook thread '+fb_threadid})
+      speaker = get_or_create(session, Person, fb_id=fb_speakerid, defaults={'name': fb_speakerid+'@facebook.com'})
+      m = Message(
+        time=dt.datetime.now(),
+        thread=thread,
+        speaker=speaker,
+        content=content)
+      session.add(m)
+      return m

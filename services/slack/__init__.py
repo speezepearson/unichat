@@ -2,7 +2,7 @@ import time
 import datetime as dt
 import logging
 import slackclient
-from sqlalchemy_bonus import get_or_create
+from sqlalchemy_bonus import session_context, get_or_create
 from .. import ClientBase
 from ... import Message, Thread, Person
 
@@ -11,9 +11,9 @@ logging.basicConfig(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 
 class Client(ClientBase):
-  def __init__(self, slack_client, db_session):
+  def __init__(self, slack_client, make_db_session):
     self.slack_client = slack_client
-    self.db_session = db_session
+    self.make_db_session = make_db_session
 
   def connect(self):
     if not self.slack_client.rtm_connect():
@@ -24,15 +24,18 @@ class Client(ClientBase):
       for event in self.slack_client.rtm_read():
         if event['type'] == 'message':
           logger.debug('got message: {}'.format(event))
-          thread = get_or_create(self.db_session, Thread, palegreendot_id=event['channel'], defaults={'name': 'Slack channel '+event['channel']})
-          speaker = get_or_create(self.db_session, Person, palegreendot_id=event['user'], defaults={'name': 'Slack user '+event['user']})
-          return Message(
-            time=dt.datetime.now(),
-            thread=thread,
-            speaker=speaker,
-            content=event['text'])
-      time.sleep(poll_period)
 
+          with session_context(self.make_db_session()) as session:
+            thread = get_or_create(session, Thread, palegreendot_id=event['channel'], defaults={'name': 'Slack channel '+event['channel']})
+            speaker = get_or_create(session, Person, palegreendot_id=event['user'], defaults={'name': 'Slack user '+event['user']})
+            m = Message(
+              time=dt.datetime.now(),
+              thread=thread,
+              speaker=speaker,
+              content=event['text'])
+            session.add(m)
+            return m
+        time.sleep(poll_period)
 
   def send_message(self, message):
     self.slack_client.api_call(
