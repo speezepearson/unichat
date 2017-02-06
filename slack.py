@@ -22,7 +22,7 @@ class Client:
   def __exit__(self, *args):
     pass
 
-  def read(self, poll_period=1):
+  def read_message(self, poll_period=1):
     while True:
       for event in self.slack_client.rtm_read():
         if event['type'] == 'message':
@@ -36,9 +36,17 @@ class Client:
             content=event['text'])
       time.sleep(poll_period)
 
-  def send(self, message):
+  def read_messages(self):
+    while True:
+      yield self.read_message()
+
+  def send_message(self, message):
     self.slack_client.api_call(
       'chat.postMessage',
       channel=message.thread.palegreendot_id,
       text=message.content,
       as_user=True)
+
+  def send_messages(self, messages):
+    for message in messages:
+      self.send_message(message)

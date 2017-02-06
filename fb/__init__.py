@@ -34,7 +34,7 @@ class Client:
     self.process.kill()
     self.process.wait()
 
-  def send(self, message):
+  def send_message(self, message):
     logger.info('sending {} to Facebook'.format(message))
     self._sending_writer.writerow({
       'time': message.time.strftime('%Y-%m-%D %H:%M:%S.%f'),
@@ -47,7 +47,11 @@ class Client:
     self._sending_buffer.seek(0)
     self._sending_buffer.truncate()
 
-  def read(self):
+  def send_messages(self, messages):
+    for message in messages:
+      self.send_message(message)
+
+  def read_message(self):
     r = next(self._receiving_reader)
     logger.info('received {} from Facebook'.format(r))
     fb_threadid, fb_speakerid, content = r
@@ -59,3 +63,7 @@ class Client:
       thread=thread,
       speaker=speaker,
       content=content)
+
+  def read_messages(self):
+    while True:
+      yield self.read_message()
