@@ -3,7 +3,7 @@ import datetime as dt
 import logging
 import slackclient
 from sqlalchemy_bonus import get_or_create
-from . import Message, Thread, Person
+from ... import Message, Thread, Person
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)

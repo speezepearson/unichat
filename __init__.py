@@ -28,4 +28,6 @@ class Thread(RelationBase):
   fb_id = sql.Column(sql.String, unique=True)
   palegreendot_id = sql.Column(sql.String, unique=True)
 
-from . import slack, fb
+
+
+from . import services

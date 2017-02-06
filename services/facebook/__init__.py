@@ -5,7 +5,7 @@ import os
 import logging
 import io
 from sqlalchemy_bonus import get_or_create
-from .. import Message, Thread, Person
+from ... import Message, Thread, Person
 
 HERE = os.path.dirname(__file__)
 
