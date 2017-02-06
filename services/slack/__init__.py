@@ -3,24 +3,21 @@ import datetime as dt
 import logging
 import slackclient
 from sqlalchemy_bonus import get_or_create
+from .. import ClientBase
 from ... import Message, Thread, Person
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 
-class Client:
+class Client(ClientBase):
   def __init__(self, slack_client, db_session):
     self.slack_client = slack_client
     self.db_session = db_session
 
-  def __enter__(self):
+  def connect(self):
     if not self.slack_client.rtm_connect():
       raise RuntimeError('unable to connect to Slack')
-    return self
-
-  def __exit__(self, *args):
-    pass
 
   def read_message(self, poll_period=1):
     while True:
@@ -36,9 +33,6 @@ class Client:
             content=event['text'])
       time.sleep(poll_period)
 
-  def read_messages(self):
-    while True:
-      yield self.read_message()
 
   def send_message(self, message):
     self.slack_client.api_call(
@@ -46,7 +40,3 @@ class Client:
       channel=message.thread.palegreendot_id,
       text=message.content,
       as_user=True)
-
-  def send_messages(self, messages):
-    for message in messages:
-      self.send_message(message)
