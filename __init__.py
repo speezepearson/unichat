@@ -41,11 +41,19 @@ class Person(RelationBase):
   palegreendot_id = sql.Column(sql.String, unique=True)
   opted_into_snakechat_mention_notifications = sql.Column(sql.Boolean, default=False)
 
+  def __repr__(self):
+    return '<Person: {}>'.format(self.name)
+
+
+
 class Thread(RelationBase):
   __tablename__ = 'Thread'
   name = sql.Column(sql.String, primary_key=True)
   fb_id = sql.Column(sql.String, unique=True)
   palegreendot_id = sql.Column(sql.String, unique=True)
+
+  def __repr__(self):
+    return '<Thread: {}>'.format(self.name)
 
 
 
