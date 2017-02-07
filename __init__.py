@@ -1,3 +1,4 @@
+import datetime as dt
 import sqlalchemy as sql
 import sqlalchemy.ext.declarative
 
@@ -13,6 +14,24 @@ class Message(RelationBase):
 
   thread = sql.orm.relationship('Thread')
   speaker = sql.orm.relationship('Person')
+
+  def __repr__(self):
+    return '<Message: {} [{}]: {}>'.format(self.speaker_name, self.thread_name, repr(self.content))
+
+  def to_json_object(self):
+    return {
+      'time': self.time.strftime('%Y-%m-%d %H:%M:%S.%f'),
+      'thread_name': self.thread_name,
+      'speaker_name': self.speaker_name,
+      'content': self.content}
+
+  @classmethod
+  def from_json_object(cls, j):
+    return cls(
+      time=dt.datetime.strptime(j['time'], '%Y-%m-%d %H:%M:%S.%f'),
+      thread_name=j['thread_name'],
+      speaker_name=j['speaker_name'],
+      content=j['content'])
 
 class Person(RelationBase):
   __tablename__ = 'Person'
