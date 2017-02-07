@@ -8,9 +8,9 @@ class Message(RelationBase):
   __tablename__ = 'Message'
   id = sql.Column(sql.Integer, primary_key=True)
   time = sql.Column(sql.DateTime)
-  thread_name = sql.Column(sql.String, sql.ForeignKey('Thread.name'))
-  speaker_name = sql.Column(sql.String, sql.ForeignKey('Person.name'))
-  content = sql.Column(sql.String)
+  thread_name = sql.Column(sql.String, sql.ForeignKey('Thread.name'), nullable=False)
+  speaker_name = sql.Column(sql.String, sql.ForeignKey('Person.name'), nullable=False)
+  content = sql.Column(sql.String, nullable=False)
 
   thread = sql.orm.relationship('Thread')
   speaker = sql.orm.relationship('Person')
