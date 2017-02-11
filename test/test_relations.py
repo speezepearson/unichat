@@ -1,20 +1,10 @@
 import datetime as dt
 import time
-import os
 import threading
-import tempfile
-import sqlalchemy as sql
-import pytest
 
-from unichat import RelationBase, Message, Person, Thread
+from unichat import Message, Person, Thread
 
-@pytest.fixture
-def make_session():
-  (_, db_path) = tempfile.mkstemp(dir='/tmp', prefix='unichat__test_relations', suffix='.db')
-  engine = sql.create_engine('sqlite:///'+db_path) # this needs to be an ACTUAL FILE, per http://docs.sqlalchemy.org/en/rel_0_9/dialects/sqlite.html#using-a-memory-database-in-multiple-threads
-  RelationBase.metadata.create_all(engine)
-  yield sql.orm.scoped_session(sql.orm.sessionmaker(bind=engine))
-  os.remove(db_path)
+from . import make_session
 
 def test_basic_object_persistence(make_session):
   now = dt.datetime.now()
