@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 
 import sqlalchemy as sql
@@ -30,6 +31,7 @@ def send_forever():
 def receive_forever():
   for message in client.read_messages():
     print(json.dumps(message.to_json_object()))
+    sys.stdout.flush()
 
 with client:
   sending_thread = threading.Thread(target=send_forever)

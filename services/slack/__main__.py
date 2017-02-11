@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 
 import slackclient
@@ -33,6 +34,7 @@ def receive_forever():
   with make_client() as client:
     for message in client.read_messages():
       print(json.dumps(message.to_json_object()))
+      sys.stdout.flush()
 
 threading.Thread(target=send_forever).start()
 threading.Thread(target=receive_forever).start()

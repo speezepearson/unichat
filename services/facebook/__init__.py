@@ -26,8 +26,7 @@ class Client(ClientBase):
   def connect(self):
     self.process = subprocess.Popen(['node', os.path.join(HERE, 'client.js')], stdin=subprocess.PIPE, stdout=subprocess.PIPE, env={'FB_EMAIL': self.email, 'FB_PASSWORD': self.password})
     self._sending_buffer = io.StringIO()
-    self._sending_writer = csv.DictWriter(self._sending_buffer, fieldnames=['time', 'thread', 'speaker', 'content'])
-    self._sending_writer.writeheader()
+    self._sending_writer = csv.DictWriter(self._sending_buffer, fieldnames=['time', 'thread', 'speaker', 'content'], lineterminator='\n')
     self._receiving_reader = csv.reader(io.TextIOWrapper(self.process.stdout))
 
   def disconnect(self):
@@ -37,7 +36,7 @@ class Client(ClientBase):
   def send_message(self, message):
     logger.info('sending {} to Facebook'.format(message))
     self._sending_writer.writerow({
-      'time': message.time.strftime('%Y-%m-%D %H:%M:%S.%f'),
+      'time': message.time.strftime('%Y-%m-%d %H:%M:%S.%f'),
       'thread': message.thread.fb_id,
       'speaker': message.speaker.fb_id,
       'content': message.content})
