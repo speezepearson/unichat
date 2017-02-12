@@ -7,7 +7,6 @@ from .. import ClientBase
 from ... import Message, Thread, Person
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 
 class Client(ClientBase):

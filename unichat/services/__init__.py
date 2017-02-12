@@ -30,4 +30,5 @@ class ClientBase(metaclass=abc.ABCMeta):
       self.send_message(message)
 
 
-from . import facebook, slack
+from . import facebook, slack, echo
+from .subprocessclient import SubprocessClient
