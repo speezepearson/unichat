@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import logging
 
 import sqlalchemy as sql
 import unichat
@@ -10,8 +11,13 @@ for varname in ['FACEBOOK_EMAIL', 'FACEBOOK_PASSWORD']:
     raise RuntimeError('{} must be set in environment'.format(varname))
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--verbose', action='store_true')
 parser.add_argument('database')
 args = parser.parse_args()
+
+if args.verbose:
+  logging.basicConfig(level=logging.DEBUG)
+  logging.debug('running in verbose mode')
 
 engine = sql.create_engine('sqlite:///'+args.database)
 unichat.RelationBase.metadata.create_all(engine)
